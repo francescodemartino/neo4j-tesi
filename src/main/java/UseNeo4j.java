@@ -94,7 +94,7 @@ public class UseNeo4j {
             System.out.println(bestGroup.getQueries());
             System.out.print(bestGroup.getColumns());
             System.out.println(" --> " + bestGroup.getCluster());
-        } //test
+        }
 
         driver.close();
     }
