@@ -1,4 +1,5 @@
 import org.neo4j.driver.*;
+import org.neo4j.driver.types.Node;
 import other.Configuration;
 import other.Table;
 
@@ -12,6 +13,7 @@ public class UseNeo4j {
     public static void main(String[] args) {
         Configuration startConfiguration = new Configuration();
         Map<String, GroupQueries> groupQueriesMap = new HashMap<>();
+        Map<String, Table> tables = new HashMap<>();
 
         // Louvain GMM KMeans LDA Girvan-Newman
         String algorithmClustering = "LDA";
@@ -34,7 +36,12 @@ public class UseNeo4j {
         }
 
         startConfiguration.configure();
-        Map<String, Table> tables = startConfiguration.getTables();
+
+        Result resultTables = session.run("MATCH (t:TABLE) return t");
+        for (Record resultTable : resultTables.list()) {
+            Node node = resultTable.get("t").asNode();
+            tables.put(node.get("TABLE_NAME").asString(), new Table(node.get("TABLE_NAME").asString(), node.get("KB").asLong(), node.get("ROWS").asLong(), node.get("ROW_SIZE").asInt()));
+        }
 
         startConfiguration.getQueries().forEach((idQuery, query) -> {
             query.getColumnsToMove().forEach((cluster, columns) -> {
@@ -89,7 +96,7 @@ public class UseNeo4j {
                 }
             }
             System.out.println("bestCost: " + bestCost);
-        } while (bestCost >= 4);
+        } while (bestCost >= 0.000000001);
 
         System.out.println("toMove size: " + toMove.size());
         for (ResultBestGroup bestGroup : toMove) {

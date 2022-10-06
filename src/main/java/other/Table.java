@@ -12,7 +12,11 @@ public class Table {
         this.kb = kb;
         this.rows = rows;
         this.rowSize = rowSize;
-        sizeColumn = ((float)(kb/rows)/rowSize);
+        if (rows == 0 || rowSize == 0) {
+            sizeColumn = 0;
+        } else {
+            sizeColumn = ((float)(kb/rows)/rowSize);
+        }
     }
 
     public long getKb() {

@@ -95,7 +95,6 @@ public class GroupQueries {
             }
         }
         for (Map.Entry<String, List<String>> element : groupColumns.entrySet()) {
-            System.out.println(">>>> " + element.getKey());
             columnsCost += tables.get(element.getKey()).getRows() * element.getValue().size();
         }
         columnsCost = columnsCost * tables.get(cluster).getRows();
