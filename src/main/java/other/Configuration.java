@@ -1,24 +1,26 @@
+package other;
+
 import org.neo4j.driver.types.Node;
 
 import java.util.*;
 
 public class Configuration {
     private Map<String, Table> tables = new HashMap<>();
-    private Map<Long, Move> moves = new HashMap<>();
+    private Map<Long, Query> queries = new HashMap<>();
     private Set<String> movedColumns = new HashSet<>();
 
-    public Map<Long, Move> getMoves() {
-        return moves;
+    public Map<Long, Query> getQueries() {
+        return queries;
     }
 
-    public void addToMove(long idQuery, String nameCluster, String nameTable, String nameColumn) {
+    public void addToQuery(long idQuery, String nameCluster, String nameTable, String nameColumn) {
         nameCluster = nameCluster.substring(8);
-        if (moves.containsKey(idQuery)) {
-            moves.get(idQuery).addToChoose(nameCluster, nameTable, nameColumn, tables);
+        if (queries.containsKey(idQuery)) {
+            queries.get(idQuery).addToChoose(nameCluster, nameTable, nameColumn, tables);
         } else {
-            Move move = new Move(idQuery);
+            Query move = new Query(idQuery);
             move.addToChoose(nameCluster, nameTable, nameColumn, tables);
-            moves.put(idQuery, move);
+            queries.put(idQuery, move);
         }
     }
 
@@ -30,11 +32,18 @@ public class Configuration {
 
     public void configure() {
         setColumnsToMove();
-        calculateDependencies();
+        queries.forEach((idQuery, query) -> query.setColumnsToMove());
+        /*queries.forEach((idQuery, query) -> {
+            System.out.println(">>>>>>>>>>> " + idQuery);
+            query.getColumnsToMove().forEach((name, columns) -> {
+                System.out.println("--------> " + name);
+                columns.forEach(System.out::println);
+            });
+        });*/
     }
 
     private void setColumnsToMove() {
-        for (Move move : moves.values()) {
+        for (Query move : queries.values()) {
             Set<String> keys = new HashSet<>(move.getChooses().keySet());
             for(Map.Entry<String, Choose> entryChoose: move.getChooses().entrySet()) {
                 keys.remove(entryChoose.getKey());
@@ -46,22 +55,6 @@ public class Configuration {
                     }
                 });
                 keys.add(entryChoose.getKey());
-            }
-        }
-    }
-
-    private void calculateDependencies() {
-        for (Move move : moves.values()) {
-            for (Move moveCheck : moves.values()) {
-                for (Choose choose : move.getChooses().values()) {
-                    for (Choose chooseCheck : moveCheck.getChooses().values()) {
-                        if (choose != chooseCheck) {
-                            if (chooseCheck.getColumnsToMove().containsAll(choose.getColumnsToMove())) {
-                                chooseCheck.addDependency(choose);
-                            }
-                        }
-                    }
-                }
             }
         }
     }

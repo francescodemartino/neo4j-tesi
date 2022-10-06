@@ -1,3 +1,5 @@
+package other;
+
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -5,14 +7,14 @@ import java.util.Set;
 
 public class Choose {
     private String nameCluster;
-    private Move move;
+    private Query query;
     private Set<String> columns = new HashSet<>();
     private Set<String> columnsToMove = new HashSet<>();
     private Set<Choose> dependencies = new HashSet<>();
     private Map<String, Table> tables = new HashMap<>();
 
-    public Choose(Move move, String nameCluster, Map<String, Table> tables) {
-        this.move = move;
+    public Choose(Query query, String nameCluster, Map<String, Table> tables) {
+        this.query = query;
         this.nameCluster = nameCluster;
     }
 
@@ -48,7 +50,7 @@ public class Choose {
         return nameCluster;
     }
 
-    public Move getMove() {
-        return move;
+    public Query getQuery() {
+        return query;
     }
 }

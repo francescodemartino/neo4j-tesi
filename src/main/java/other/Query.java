@@ -1,11 +1,13 @@
-import java.util.HashMap;
-import java.util.Map;
+package other;
 
-public class Move {
+import java.util.*;
+
+public class Query {
     private long id;
     private Map<String, Choose> chooses = new HashMap<>();
+    private Map<String, Set<String>> columnsToMove = new HashMap<>();
 
-    public Move(long id) {
+    public Query(long id) {
         this.id = id;
     }
 
@@ -19,11 +21,19 @@ public class Move {
 
     public void addToChoose(String nameCluster, String nameTable, String nameColumn, Map<String, Table> tables) {
         if (chooses.containsKey(nameCluster)) {
-            chooses.get(nameCluster).addColumn(nameTable + ":" + nameColumn);
+            chooses.get(nameCluster).addColumn(nameCluster + ":" + nameColumn);
         } else {
             Choose choose = new Choose(this, nameCluster, tables);
-            choose.addColumn(nameTable + ":" + nameColumn);
+            choose.addColumn(nameCluster + ":" + nameColumn);
             chooses.put(nameCluster, choose);
         }
+    }
+
+    public void setColumnsToMove() {
+        chooses.forEach((s, choose) -> columnsToMove.put(s, choose.getColumnsToMove()));
+    }
+
+    public Map<String, Set<String>> getColumnsToMove() {
+        return columnsToMove;
     }
 }

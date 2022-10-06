@@ -1,3 +1,5 @@
+package other;
+
 public class Table {
     final private String name;
     final private long kb;
