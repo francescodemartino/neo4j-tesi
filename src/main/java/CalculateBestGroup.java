@@ -5,10 +5,10 @@ public class CalculateBestGroup {
     public static ResultBestGroup getBestGroup(String cluster, List<GroupQueries> listGroupQueries) {
         List<GroupQueries> listToReturn = new ArrayList<>();
 
-        listGroupQueries.sort((first, second) -> Float.compare(second.getCost(null, null), first.getCost(null, null)));
+        listGroupQueries.sort((first, second) -> Double.compare(second.getCost(null, null), first.getCost(null, null)));
         listToReturn.add(listGroupQueries.get(0));
-        float lastCost = 0;
-        float currentCost = listGroupQueries.get(0).getCost(null, null);
+        double lastCost = 0;
+        double currentCost = listGroupQueries.get(0).getCost(null, null);
 
         while (listToReturn.size() < listGroupQueries.size()) {
             lastCost = currentCost;
@@ -18,7 +18,7 @@ public class CalculateBestGroup {
                 } else if (second.isOnTop(listToReturn, null)) {
                     return 1;
                 } else {
-                    return Float.compare(second.getCost(listToReturn, null), first.getCost(listToReturn, null));
+                    return Double.compare(second.getCost(listToReturn, null), first.getCost(listToReturn, null));
                 }
             });
             // listGroupQueries.forEach(groupQueries -> System.out.println(groupQueries.getCost(listToReturn, null)));

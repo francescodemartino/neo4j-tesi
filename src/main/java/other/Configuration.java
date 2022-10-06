@@ -30,16 +30,13 @@ public class Configuration {
         }
     }
 
+    public Map<String, Table> getTables() {
+        return tables;
+    }
+
     public void configure() {
         setColumnsToMove();
         queries.forEach((idQuery, query) -> query.setColumnsToMove());
-        /*queries.forEach((idQuery, query) -> {
-            System.out.println(">>>>>>>>>>> " + idQuery);
-            query.getColumnsToMove().forEach((name, columns) -> {
-                System.out.println("--------> " + name);
-                columns.forEach(System.out::println);
-            });
-        });*/
     }
 
     private void setColumnsToMove() {

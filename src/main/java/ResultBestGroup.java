@@ -36,7 +36,7 @@ class ResultBestGroup {
         return queries;
     }
 
-    public float getCost() {
+    public double getCost() {
         List<GroupQueries> groupQueriesCopy = new ArrayList<>(groupQueries);
         if (groupQueriesCopy.size() == 0) {
             return 0;

@@ -1,16 +1,18 @@
 import other.Query;
+import other.Table;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class GroupQueries {
+    private Map<String, Table> tables;
     private String name;
     private String cluster;
     private Set<String> columns;
     private Set<Query> queries = new HashSet<>();
 
-    public GroupQueries(String name, String cluster, Set<String> columns) {
+    public GroupQueries(Map<String, Table> tables, String name, String cluster, Set<String> columns) {
+        this.tables = tables;
         this.name = name;
         this.cluster = cluster;
         this.columns = columns;
@@ -66,7 +68,7 @@ public class GroupQueries {
         return columnsCopy.size() == 0 && queriesCopy.size() != 0;
     }
 
-    float getCost(List<GroupQueries> groupsToRemove, List<GroupQueries> groups) {
+    double getCost(List<GroupQueries> groupsToRemove, List<GroupQueries> groups) {
         Set<String> columnsCopy = new HashSet<>(columns);
         Set<Query> queriesCopy = new HashSet<>(queries);
         if (groups != null) {
@@ -82,8 +84,23 @@ public class GroupQueries {
             });
         }
 
-        float queriesCost = (float)queriesCopy.size();
-        float columnsCost = (float)columnsCopy.size();
+        double columnsCost = 0;
+        Map<String, List<String>> groupColumns = new HashMap<>();
+        List<String[]> columnsCopyTableColumn = columnsCopy.stream().map(columns -> columns.split(":")).collect(Collectors.toList());
+        for (String[] tableColumn : columnsCopyTableColumn) {
+            if (groupColumns.containsKey(tableColumn[0])) {
+                groupColumns.get(tableColumn[0]).add(tableColumn[1]);
+            } else {
+                groupColumns.put(tableColumn[0], new ArrayList<>(List.of(tableColumn[1])));
+            }
+        }
+        for (Map.Entry<String, List<String>> element : groupColumns.entrySet()) {
+            System.out.println(">>>> " + element.getKey());
+            columnsCost += tables.get(element.getKey()).getRows() * element.getValue().size();
+        }
+        columnsCost = columnsCost * tables.get(cluster).getRows();
+
+        double queriesCost = queriesCopy.size();
         if (queriesCost == 0) {
             return 0;
         }

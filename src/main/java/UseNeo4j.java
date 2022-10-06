@@ -1,5 +1,6 @@
 import org.neo4j.driver.*;
 import other.Configuration;
+import other.Table;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -16,7 +17,7 @@ public class UseNeo4j {
         String algorithmClustering = "LDA";
         Driver driver = GraphDatabase.driver("bolt://localhost:11008", AuthTokens.basic("neo4j", "password"));
         Session session = driver.session(SessionConfig.forDatabase("tesi"));
-        Result result = session.run("MATCH (cl1:CLUSTER)-[:COMPOSES{ALGO:'" + algorithmClustering + "'}]->(t1:TABLE)-[:COMPOSE]->(c1:COLUMN)<--(q:QUERY{TYPE:'SELECT'})-[:ENQUIRY{TYPE: 'SELECT'}]->(c2:COLUMN)<-[:COMPOSE]-(t2:TABLE)<-[:COMPOSES{ALGO:'" + algorithmClustering + "'}]-(cl2:CLUSTER) where cl1<>cl2 return q,t1,t2,cl1,cl2,c1,c2");
+        Result result = session.run("MATCH (cl1:CLUSTER)-[:COMPOSES{ALGO:'" + algorithmClustering + "'}]->(t1:TABLE)-[:COMPOSE]->(c1:COLUMN)<--(q:QUERY{TYPE:'SELECT'})-[:ENQUIRY{TYPE: 'SELECT'}]->(c2:COLUMN)<-[:COMPOSE]-(t2:TABLE)<-[:COMPOSES{ALGO:'" + algorithmClustering + "'}]-(cl2:CLUSTER) where cl1<>cl2 and NOT cl1.CODE = 'CLUSTER_No link' and NOT cl2.CODE = 'CLUSTER_No link' return q,t1,t2,cl1,cl2,c1,c2");
         for (Record record : result.list()) {
             long idQuery = record.get("q").asNode().id();
             String columnLeft = record.get("c1").asNode().get("NOME_CAMPO").asString();
@@ -33,6 +34,7 @@ public class UseNeo4j {
         }
 
         startConfiguration.configure();
+        Map<String, Table> tables = startConfiguration.getTables();
 
         startConfiguration.getQueries().forEach((idQuery, query) -> {
             query.getColumnsToMove().forEach((cluster, columns) -> {
@@ -40,7 +42,7 @@ public class UseNeo4j {
                 if (groupQueriesMap.containsKey(hashKey)) {
                     groupQueriesMap.get(hashKey).addQuery(query);
                 } else {
-                    GroupQueries groupQueries = new GroupQueries(hashKey, cluster, columns);
+                    GroupQueries groupQueries = new GroupQueries(tables, hashKey, cluster, columns);
                     groupQueries.addQuery(query);
                     groupQueriesMap.put(hashKey, groupQueries);
                 }
@@ -64,7 +66,7 @@ public class UseNeo4j {
             mapCluster.put(cluster, groupQueriesList.stream().filter(groupQueries -> groupQueries.getCluster().equals(cluster)).collect(Collectors.toList()));
         }
 
-        float bestCost;
+        double bestCost;
         List<ResultBestGroup> toMove = new ArrayList<>();
         List<ResultBestGroup> resultsCluster = new ArrayList<>();
 
@@ -74,7 +76,7 @@ public class UseNeo4j {
             for (String cluster : listCluster) {
                 resultsCluster.add(CalculateBestGroup.getBestGroup(cluster, mapCluster.get(cluster)));
             }
-            resultsCluster.sort((first, second) -> Float.compare(second.getCost(), first.getCost()));
+            resultsCluster.sort((first, second) -> Double.compare(second.getCost(), first.getCost()));
 
             ResultBestGroup bestGroupToAdd = resultsCluster.get(0);
             toMove.add(bestGroupToAdd);

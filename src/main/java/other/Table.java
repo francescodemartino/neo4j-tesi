@@ -13,13 +13,6 @@ public class Table {
         this.rows = rows;
         this.rowSize = rowSize;
         sizeColumn = ((float)(kb/rows)/rowSize);
-
-        /*System.out.println(name);
-        System.out.println(kb);
-        System.out.println(rows);
-        System.out.println(rowSize);
-        System.out.println(sizeColumn);
-        System.out.println("-----------------------------");*/
     }
 
     public long getKb() {
