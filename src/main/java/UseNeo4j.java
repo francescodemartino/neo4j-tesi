@@ -80,11 +80,15 @@ public class UseNeo4j {
             toMove.add(bestGroupToAdd);
             bestCost = bestGroupToAdd.getCost();
             mapCluster.get(bestGroupToAdd.getCluster()).removeAll(bestGroupToAdd.getGroupQueries());
-            for (String cluster : listCluster) {
+            /*for (String cluster : listCluster) {
                 for (GroupQueries groupQueries : mapCluster.get(cluster)) {
                     groupQueries.removeColumns(bestGroupToAdd.getColumns());
                     groupQueries.removeQueries(bestGroupToAdd.getQueries());
                 }
+            }*/
+            for (GroupQueries groupQueries : mapCluster.get(bestGroupToAdd.getCluster())) {
+                groupQueries.removeColumns(bestGroupToAdd.getColumns());
+                groupQueries.removeQueries(bestGroupToAdd.getQueries());
             }
             System.out.println("bestCost: " + bestCost);
         } while (bestCost >= 4);
