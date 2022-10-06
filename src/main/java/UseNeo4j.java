@@ -13,9 +13,10 @@ public class UseNeo4j {
         Map<String, GroupQueries> groupQueriesMap = new HashMap<>();
 
         // Louvain GMM KMeans LDA Girvan-Newman
+        String algorithmClustering = "LDA";
         Driver driver = GraphDatabase.driver("bolt://localhost:11008", AuthTokens.basic("neo4j", "password"));
         Session session = driver.session(SessionConfig.forDatabase("tesi"));
-        Result result = session.run("MATCH (cl1:CLUSTER)-[:COMPOSES{ALGO:'LDA'}]->(t1:TABLE)-[:COMPOSE]->(c1:COLUMN)<--(q:QUERY{TYPE:'SELECT'})-[:ENQUIRY{TYPE: 'SELECT'}]->(c2:COLUMN)<-[:COMPOSE]-(t2:TABLE)<-[:COMPOSES{ALGO:'LDA'}]-(cl2:CLUSTER) where cl1<>cl2 return q,t1,t2,cl1,cl2,c1,c2");
+        Result result = session.run("MATCH (cl1:CLUSTER)-[:COMPOSES{ALGO:'" + algorithmClustering + "'}]->(t1:TABLE)-[:COMPOSE]->(c1:COLUMN)<--(q:QUERY{TYPE:'SELECT'})-[:ENQUIRY{TYPE: 'SELECT'}]->(c2:COLUMN)<-[:COMPOSE]-(t2:TABLE)<-[:COMPOSES{ALGO:'" + algorithmClustering + "'}]-(cl2:CLUSTER) where cl1<>cl2 return q,t1,t2,cl1,cl2,c1,c2");
         for (Record record : result.list()) {
             long idQuery = record.get("q").asNode().id();
             String columnLeft = record.get("c1").asNode().get("NOME_CAMPO").asString();
