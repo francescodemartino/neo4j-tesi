@@ -5,12 +5,13 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 public class UseNeo4j {
     public static void main(String[] args) {
         Configuration startConfiguration = new Configuration();
-        Map<String, GroupQueries> groupQueriesMap = new HashMap<>();
+        Map<String, List<GroupQueries>> mapCluster = new HashMap<>();
 
         // Louvain GMM KMeans LDA Girvan-Newman
         String algorithmClustering = "LDA";
@@ -34,7 +35,29 @@ public class UseNeo4j {
 
         startConfiguration.configure();
 
-        startConfiguration.getQueries().forEach((idQuery, query) -> {
+        List<GroupQueries> groupQueriesList = new ArrayList<>();
+        for (int i = 0; i < 2; i++) {
+            AtomicBoolean hasNotGroup = new AtomicBoolean(true);
+            startConfiguration.getQueries().forEach((idQuery, query) -> {
+                query.getColumnsToMove().forEach((cluster, columns) -> {
+                    for (GroupQueries groupQueries : groupQueriesList) {
+                        if (groupQueries.getColumns().containsAll(columns)) {
+                            hasNotGroup.set(false);
+                            groupQueries.addQuery(query);
+                        }
+                    }
+                    if (hasNotGroup.get()) {
+                        String hashKey = columns.hashCode() + ":" + cluster;
+                        GroupQueries groupQueries = new GroupQueries(hashKey, cluster, columns);
+                        groupQueries.addQuery(query);
+                        groupQueriesList.add(groupQueries);
+                    }
+                    hasNotGroup.set(true);
+                });
+            });
+        }
+
+        /* Map<String, GroupQueries> groupQueriesMap = new HashMap<>();startConfiguration.getQueries().forEach((idQuery, query) -> {
             query.getColumnsToMove().forEach((cluster, columns) -> {
                 String hashKey = columns.hashCode() + ":" + cluster;
                 if (groupQueriesMap.containsKey(hashKey)) {
@@ -49,8 +72,7 @@ public class UseNeo4j {
             });
         });
 
-        Map<String, List<GroupQueries>> mapCluster = new HashMap<>();
-        List<GroupQueries> groupQueriesList = new ArrayList<>(groupQueriesMap.values());
+        List<GroupQueries> groupQueriesList = new ArrayList<>(groupQueriesMap.values()); */
         // in realtà sarebbe da ordinare in base alla funzione obiettivo sul singolo gruppo e bisognerebbe dividere tutti i gruppi in sottoinsiemi in base al cluster di destinazione
         // inoltre per ogni sottoinsieme sarebbero da creare altri sottoinsiemi e verificare la loro funzione obiettivo. Una volta fatto per tutti i sottoinsiemi di ogni gruppo dei cluster di destinazione, è necessario
         // verificare quello con il punteggo più alto e quindi rimuoverlo, considerando quel gruppo eseguito. Una volta fatto bisogna togliere tutti i campi coinvolti nella operazione e tutte le query coinvolte, perchè a quel punto saranno considerate risolte
@@ -89,7 +111,7 @@ public class UseNeo4j {
 
             for (GroupQueries groupQueries : mapCluster.get(bestGroupToAdd.getCluster())) {
                 groupQueries.removeColumns(bestGroupToAdd.getColumns());
-                // groupQueries.removeQueries(bestGroupToAdd.getQueries());
+                groupQueries.removeQueries(bestGroupToAdd.getQueries());
             }
             for (String cluster : listCluster) {
                 for (GroupQueries groupQueries : mapCluster.get(cluster)) {
