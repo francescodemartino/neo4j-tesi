@@ -26,7 +26,8 @@ public class Configuration {
 
     public void addTable(Node node) {
         if (!tables.containsKey(node.get("TABLE_NAME").asString())) {
-            tables.put(node.get("TABLE_NAME").asString(), new Table(node.get("TABLE_NAME").asString(), node.get("KB").asLong(), node.get("ROWS").asLong(), node.get("ROW_SIZE").asInt()));
+            // tables.put(node.get("TABLE_NAME").asString(), new Table(node.get("TABLE_NAME").asString(), node.get("KB").asLong(), node.get("ROWS").asLong(), node.get("ROW_SIZE").asInt()));
+            tables.put(node.get("TABLE_NAME").asString(), new Table(node.get("TABLE_NAME").asString(), 1, 1, 1));
         }
     }
 
