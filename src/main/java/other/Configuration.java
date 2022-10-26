@@ -7,10 +7,13 @@ import java.util.*;
 public class Configuration {
     private Map<String, Table> tables = new HashMap<>();
     private Map<Long, Query> queries = new HashMap<>();
-    private Set<String> movedColumns = new HashSet<>();
 
     public Map<Long, Query> getQueries() {
         return queries;
+    }
+
+    public Map<String, Table> getTables() {
+        return tables;
     }
 
     public void addToQuery(long idQuery, String nameCluster, String nameTable, String nameColumn) {
@@ -24,10 +27,10 @@ public class Configuration {
         }
     }
 
-    public void addTable(Node node) {
+    public void addTable(Node node, String cluster) {
         if (!tables.containsKey(node.get("TABLE_NAME").asString())) {
-            // tables.put(node.get("TABLE_NAME").asString(), new Table(node.get("TABLE_NAME").asString(), node.get("KB").asLong(), node.get("ROWS").asLong(), node.get("ROW_SIZE").asInt()));
-            tables.put(node.get("TABLE_NAME").asString(), new Table(node.get("TABLE_NAME").asString(), 1, 1, 1));
+            tables.put(node.get("TABLE_NAME").asString(), new Table(node.get("TABLE_NAME").asString(), node.get("KB").asLong(), node.get("ROWS").asLong(), node.get("ROW_SIZE").asInt(), cluster));
+            // tables.put(node.get("TABLE_NAME").asString(), new Table(node.get("TABLE_NAME").asString(), 1, 1, 1));
         }
     }
 
@@ -50,9 +53,9 @@ public class Configuration {
                 keys.remove(entryChoose.getKey());
                 keys.forEach(keySub -> {
                     for (String column : move.getChooses().get(keySub).getColumns()) {
-                        if (!movedColumns.contains(entryChoose.getValue().getNameCluster() + ":" + column)) {
-                            entryChoose.getValue().addColumnToMove(column);
-                        }
+                        // if (!movedColumns.contains(entryChoose.getValue().getNameCluster() + ":" + column)) {
+                        entryChoose.getValue().addColumnToMove(column);
+                        // }
                     }
                 });
                 keys.add(entryChoose.getKey());

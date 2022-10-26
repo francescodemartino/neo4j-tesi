@@ -5,14 +5,16 @@ public class Table {
     final private long kb;
     final private long rows;
     final private int rowSize;
-    final private float sizeColumn;
+    final private double sizeColumn;
+    final private String cluster;
 
-    public Table(String name, long kb, long rows, int rowSize) {
+    public Table(String name, long kb, long rows, int rowSize, String cluster) {
         this.name = name;
         this.kb = kb;
         this.rows = rows;
         this.rowSize = rowSize;
-        sizeColumn = ((float)(kb/rows)/rowSize);
+        this.cluster = cluster;
+        sizeColumn = ((double)(kb/rows)/rowSize);
 
         /*System.out.println(name);
         System.out.println(kb);
@@ -20,6 +22,14 @@ public class Table {
         System.out.println(rowSize);
         System.out.println(sizeColumn);
         System.out.println("-----------------------------");*/
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getCluster() {
+        return cluster;
     }
 
     public long getKb() {
@@ -40,7 +50,7 @@ public class Table {
     //  Alla fine non serve che controlli anche la lunghezza, basta che differenzi tra
     //  i tipi principali, per esempio String, Number e Date e cose così,
     //  questo perchè alla fine su mongo vengono conservati così
-    public float getSizeColumn(String nameColumn) {
+    public double getSizeColumn(String nameColumn) {
         return sizeColumn;
     }
 }

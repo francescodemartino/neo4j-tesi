@@ -1,10 +1,7 @@
 import org.neo4j.driver.*;
 import other.Configuration;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
@@ -12,6 +9,7 @@ public class UseNeo4j {
     public static void main(String[] args) {
         Configuration startConfiguration = new Configuration();
         Map<String, List<GroupQueries>> mapCluster = new HashMap<>();
+        Set<String> namesCluster = new HashSet<>();
 
         // Louvain GMM KMeans LDA Girvan-Newman
         String algorithmClustering = "LDA";
@@ -19,7 +17,8 @@ public class UseNeo4j {
         Session session = driver.session(SessionConfig.forDatabase("tesi"));
         // Driver driver = GraphDatabase.driver("bolt://localhost:7687", AuthTokens.basic("neo4j", "password"));
         // Session session = driver.session();
-        Result result = session.run("MATCH (cl1:CLUSTER)-[:COMPOSES{ALGO:'" + algorithmClustering + "'}]->(t1:TABLE)-[:COMPOSE]->(c1:COLUMN)<--(q:QUERY{TYPE:'SELECT'})-[:ENQUIRY{TYPE: 'SELECT'}]->(c2:COLUMN)<-[:COMPOSE]-(t2:TABLE)<-[:COMPOSES{ALGO:'" + algorithmClustering + "'}]-(cl2:CLUSTER) where cl1<>cl2 and NOT cl1.CODE = 'CLUSTER_No link' and NOT cl2.CODE = 'CLUSTER_No link' return q,t1,t2,cl1,cl2,c1,c2");
+        // Result result = session.run("MATCH (cl1:CLUSTER)-[:COMPOSES{ALGO:'" + algorithmClustering + "'}]->(t1:TABLE)-[:COMPOSE]->(c1:COLUMN)<-[:ENQUIRY{TYPE: 'SELECT'}]-(q:QUERY{TYPE:'SELECT'})-[:ENQUIRY{TYPE: 'SELECT'}]->(c2:COLUMN)<-[:COMPOSE]-(t2:TABLE)<-[:COMPOSES{ALGO:'" + algorithmClustering + "'}]-(cl2:CLUSTER) where cl1<>cl2 and NOT cl1.CODE = 'CLUSTER_No link' and NOT cl2.CODE = 'CLUSTER_No link' return q,t1,t2,cl1,cl2,c1,c2");
+        Result result = session.run("MATCH (cl1:CLUSTER)-[:COMPOSES{ALGO:'" + algorithmClustering + "'}]->(t1:TABLE)-[:COMPOSE]->(c1:COLUMN)<-[e1:ENQUIRY]-(q:QUERY{TYPE:'SELECT'})-[e2:ENQUIRY]->(c2:COLUMN)<-[:COMPOSE]-(t2:TABLE)<-[:COMPOSES{ALGO:'" + algorithmClustering + "'}]-(cl2:CLUSTER) where cl1<>cl2 and NOT cl1.CODE = 'CLUSTER_No link' and NOT cl2.CODE = 'CLUSTER_No link' and (e1.TYPE = 'SELECT' or e1.TYPE = 'WHERE') and (e2.TYPE = 'SELECT' or e2.TYPE = 'WHERE') return q,t1,t2,cl1,cl2,c1,c2");
         for (Record record : result.list()) {
             long idQuery = record.get("q").asNode().id();
             String columnLeft = record.get("c1").asNode().get("NOME_CAMPO").asString();
@@ -31,8 +30,17 @@ public class UseNeo4j {
 
             startConfiguration.addToQuery(idQuery, clusterLeft, tableLeft, columnLeft);
             startConfiguration.addToQuery(idQuery, clusterRight, tableRight, columnRight);
-            startConfiguration.addTable(record.get("t1").asNode());
-            startConfiguration.addTable(record.get("t2").asNode());
+            startConfiguration.addTable(record.get("t1").asNode(), clusterLeft.substring(8));
+            startConfiguration.addTable(record.get("t2").asNode(), clusterRight.substring(8));
+
+            namesCluster.add(clusterLeft.substring(8));
+            namesCluster.add(clusterRight.substring(8));
+        }
+
+        namesCluster.removeAll(startConfiguration.getTables().keySet());
+        for (String nameCluster : namesCluster) {
+            Result resultTableCluster = session.run("match (t:TABLE) where t.TABLE_NAME = '" + nameCluster + "' return t");
+            startConfiguration.addTable(resultTableCluster.list().get(0).get("t").asNode(), nameCluster);
         }
 
         startConfiguration.configure();
@@ -49,8 +57,7 @@ public class UseNeo4j {
                         }
                     }
                     if (hasNotGroup.get()) {
-                        String hashKey = columns.hashCode() + ":" + cluster;
-                        GroupQueries groupQueries = new GroupQueries(hashKey, cluster, columns);
+                        GroupQueries groupQueries = new GroupQueries(cluster, columns, startConfiguration.getTables());
                         groupQueries.addQuery(query);
                         groupQueriesList.add(groupQueries);
                     }
@@ -88,7 +95,7 @@ public class UseNeo4j {
             mapCluster.put(cluster, groupQueriesList.stream().filter(groupQueries -> groupQueries.getCluster().equals(cluster)).collect(Collectors.toList()));
         }
 
-        float bestCost;
+        double bestCost;
         List<ResultBestGroup> toMove = new ArrayList<>();
         List<ResultBestGroup> resultsCluster = new ArrayList<>();
 
@@ -98,7 +105,8 @@ public class UseNeo4j {
             for (String cluster : listCluster) {
                 resultsCluster.add(CalculateBestGroup.getBestGroup(cluster, mapCluster.get(cluster)));
             }
-            resultsCluster.sort((first, second) -> Float.compare(second.getCost(), first.getCost()));
+            System.out.println("---> " + resultsCluster.size());
+            resultsCluster.sort((first, second) -> Double.compare(second.getCost(), first.getCost()));
 
             ResultBestGroup bestGroupToAdd = resultsCluster.get(0);
             toMove.add(bestGroupToAdd);
@@ -121,7 +129,7 @@ public class UseNeo4j {
                 }
             }
             System.out.println("bestCost: " + bestCost);
-        } while (bestCost >= 4);
+        } while (bestCost >= Math.pow(10, -11));
 
         System.out.println("toMove size: " + toMove.size());
         for (ResultBestGroup bestGroup : toMove) {

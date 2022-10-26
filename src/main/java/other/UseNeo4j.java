@@ -25,8 +25,8 @@ public class UseNeo4j {
 
             startConfiguration.addToQuery(idQuery, clusterLeft, tableLeft, columnLeft);
             startConfiguration.addToQuery(idQuery, clusterRight, tableRight, columnRight);
-            startConfiguration.addTable(record.get("t1").asNode());
-            startConfiguration.addTable(record.get("t2").asNode());
+            startConfiguration.addTable(record.get("t1").asNode(), clusterLeft);
+            startConfiguration.addTable(record.get("t2").asNode(), clusterRight);
         }
 
         // System.out.println("Start configure");

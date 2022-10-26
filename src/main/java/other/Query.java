@@ -21,10 +21,10 @@ public class Query {
 
     public void addToChoose(String nameCluster, String nameTable, String nameColumn, Map<String, Table> tables) {
         if (chooses.containsKey(nameCluster)) {
-            chooses.get(nameCluster).addColumn(nameCluster + ":" + nameColumn);
+            chooses.get(nameCluster).addColumn(nameTable + ":" + nameColumn);
         } else {
             Choose choose = new Choose(this, nameCluster, tables);
-            choose.addColumn(nameCluster + ":" + nameColumn);
+            choose.addColumn(nameTable + ":" + nameColumn);
             chooses.put(nameCluster, choose);
         }
     }
