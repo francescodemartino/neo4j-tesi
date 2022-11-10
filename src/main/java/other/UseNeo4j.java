@@ -23,8 +23,8 @@ public class UseNeo4j {
             String tableRight = record.get("t2").asNode().get("TABLE_NAME").asString();
             String clusterRight = record.get("cl2").asNode().get("CODE").asString();
 
-            startConfiguration.addToQuery(idQuery, clusterLeft, tableLeft, columnLeft);
-            startConfiguration.addToQuery(idQuery, clusterRight, tableRight, columnRight);
+            // startConfiguration.addToQuery(idQuery, clusterLeft, tableLeft, columnLeft);
+            // startConfiguration.addToQuery(idQuery, clusterRight, tableRight, columnRight);
             startConfiguration.addTable(record.get("t1").asNode(), clusterLeft);
             startConfiguration.addTable(record.get("t2").asNode(), clusterRight);
         }

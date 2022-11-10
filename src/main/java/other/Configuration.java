@@ -16,12 +16,13 @@ public class Configuration {
         return tables;
     }
 
-    public void addToQuery(long idQuery, String nameCluster, String nameTable, String nameColumn) {
+    public void addToQuery(long idQuery, String nameCluster, String nameTable, String nameColumn, String sql) {
         nameCluster = nameCluster.substring(8);
         if (queries.containsKey(idQuery)) {
             queries.get(idQuery).addToChoose(nameCluster, nameTable, nameColumn, tables);
         } else {
             Query move = new Query(idQuery);
+            move.setSql(sql);
             move.addToChoose(nameCluster, nameTable, nameColumn, tables);
             queries.put(idQuery, move);
         }

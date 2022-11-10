@@ -1,12 +1,17 @@
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.neo4j.driver.*;
 import other.Configuration;
 
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 public class UseNeo4j {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
         Configuration startConfiguration = new Configuration();
         Map<String, List<GroupQueries>> mapCluster = new HashMap<>();
         Set<String> namesCluster = new HashSet<>();
@@ -18,9 +23,10 @@ public class UseNeo4j {
         // Driver driver = GraphDatabase.driver("bolt://localhost:7687", AuthTokens.basic("neo4j", "password"));
         // Session session = driver.session();
         // Result result = session.run("MATCH (cl1:CLUSTER)-[:COMPOSES{ALGO:'" + algorithmClustering + "'}]->(t1:TABLE)-[:COMPOSE]->(c1:COLUMN)<-[:ENQUIRY{TYPE: 'SELECT'}]-(q:QUERY{TYPE:'SELECT'})-[:ENQUIRY{TYPE: 'SELECT'}]->(c2:COLUMN)<-[:COMPOSE]-(t2:TABLE)<-[:COMPOSES{ALGO:'" + algorithmClustering + "'}]-(cl2:CLUSTER) where cl1<>cl2 and NOT cl1.CODE = 'CLUSTER_No link' and NOT cl2.CODE = 'CLUSTER_No link' return q,t1,t2,cl1,cl2,c1,c2");
-        Result result = session.run("MATCH (cl1:CLUSTER)-[:COMPOSES{ALGO:'" + algorithmClustering + "'}]->(t1:TABLE)-[:COMPOSE]->(c1:COLUMN)<-[e1:ENQUIRY]-(q:QUERY{TYPE:'SELECT'})-[e2:ENQUIRY]->(c2:COLUMN)<-[:COMPOSE]-(t2:TABLE)<-[:COMPOSES{ALGO:'" + algorithmClustering + "'}]-(cl2:CLUSTER) where cl1<>cl2 and NOT cl1.CODE = 'CLUSTER_No link' and NOT cl2.CODE = 'CLUSTER_No link' and (e1.TYPE = 'SELECT' or e1.TYPE = 'WHERE') and (e2.TYPE = 'SELECT' or e2.TYPE = 'WHERE') return q,t1,t2,cl1,cl2,c1,c2");
+        Result result = session.run("MATCH (cl1:CLUSTER)-[:COMPOSES{ALGO:'" + algorithmClustering + "'}]->(t1:TABLE)-[:COMPOSE]->(c1:COLUMN)<-[e1:ENQUIRY]-(q:QUERY{TYPE:'SELECT'})-[e2:ENQUIRY]->(c2:COLUMN)<-[:COMPOSE]-(t2:TABLE)<-[:COMPOSES{ALGO:'" + algorithmClustering + "'}]-(cl2:CLUSTER) where cl1<>cl2 and NOT cl1.CODE = 'CLUSTER_No link' and NOT cl2.CODE = 'CLUSTER_No link' and (e1.TYPE = 'SELECT' or e1.TYPE = 'WHERE') and (e2.TYPE = 'SELECT' or e2.TYPE = 'WHERE') and  (t1.OUT_OF_SCOPE is null or t1.OUT_OF_SCOPE <> '1') and (t2.OUT_OF_SCOPE is null or t2.OUT_OF_SCOPE <> '1') return q,t1,t2,cl1,cl2,c1,c2");
         for (Record record : result.list()) {
             long idQuery = record.get("q").asNode().id();
+            String sql = record.get("q").asNode().get("SQLTEXT").asString();
             String columnLeft = record.get("c1").asNode().get("NOME_CAMPO").asString();
             String tableLeft = record.get("t1").asNode().get("TABLE_NAME").asString();
             String clusterLeft = record.get("cl1").asNode().get("CODE").asString();
@@ -28,8 +34,8 @@ public class UseNeo4j {
             String tableRight = record.get("t2").asNode().get("TABLE_NAME").asString();
             String clusterRight = record.get("cl2").asNode().get("CODE").asString();
 
-            startConfiguration.addToQuery(idQuery, clusterLeft, tableLeft, columnLeft);
-            startConfiguration.addToQuery(idQuery, clusterRight, tableRight, columnRight);
+            startConfiguration.addToQuery(idQuery, clusterLeft, tableLeft, columnLeft, sql);
+            startConfiguration.addToQuery(idQuery, clusterRight, tableRight, columnRight, sql);
             startConfiguration.addTable(record.get("t1").asNode(), clusterLeft.substring(8));
             startConfiguration.addTable(record.get("t2").asNode(), clusterRight.substring(8));
 
@@ -51,7 +57,7 @@ public class UseNeo4j {
             startConfiguration.getQueries().forEach((idQuery, query) -> {
                 query.getColumnsToMove().forEach((cluster, columns) -> {
                     for (GroupQueries groupQueries : groupQueriesList) {
-                        if (groupQueries.getColumns().containsAll(columns)) {
+                        if (groupQueries.getCluster().equals(cluster) && groupQueries.getColumns().equals(columns)) {
                             hasNotGroup.set(false);
                             groupQueries.addQuery(query);
                         }
@@ -65,6 +71,16 @@ public class UseNeo4j {
                 });
             });
         }
+
+        startConfiguration.getQueries().forEach((idQuery, query) -> {
+            query.getColumnsToMove().forEach((cluster, columns) -> {
+                for (GroupQueries groupQueries : groupQueriesList) {
+                    if (groupQueries.getCluster().equals(cluster) && groupQueries.getColumns().containsAll(columns)) {
+                        groupQueries.addQuery(query);
+                    }
+                }
+            });
+        });
 
         /* Map<String, GroupQueries> groupQueriesMap = new HashMap<>();startConfiguration.getQueries().forEach((idQuery, query) -> {
             query.getColumnsToMove().forEach((cluster, columns) -> {
@@ -132,11 +148,9 @@ public class UseNeo4j {
         } while (bestCost >= Math.pow(10, -11));
 
         System.out.println("toMove size: " + toMove.size());
-        for (ResultBestGroup bestGroup : toMove) {
-            System.out.println(bestGroup.getQueries());
-            System.out.print(bestGroup.getColumns());
-            System.out.println(" --> " + bestGroup.getCluster());
-        }
+
+        SaveExcel saveExcel = new SaveExcel(toMove, session, algorithmClustering);
+        saveExcel.save();
 
         driver.close();
     }

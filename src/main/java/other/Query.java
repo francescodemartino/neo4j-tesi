@@ -4,6 +4,7 @@ import java.util.*;
 
 public class Query {
     private long id;
+    private String sql;
     private Map<String, Choose> chooses = new HashMap<>();
     private Map<String, Set<String>> columnsToMove = new HashMap<>();
 
@@ -35,5 +36,13 @@ public class Query {
 
     public Map<String, Set<String>> getColumnsToMove() {
         return columnsToMove;
+    }
+
+    public String getSql() {
+        return sql;
+    }
+
+    public void setSql(String sql) {
+        this.sql = sql;
     }
 }

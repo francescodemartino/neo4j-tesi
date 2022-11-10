@@ -102,7 +102,7 @@ public class GroupQueries {
             /*System.out.println(entryGroupClusterColumn.getKey());
             System.out.println(tableSource.getName());
             System.out.println(tableSource.getRows());*/
-            sumStorageCluster = sumStorageCluster * tableSource.getRows() * ((double) tableRoot.getRows() / tableSource.getRows());
+            sumStorageCluster = sumStorageCluster /* * tableSource.getRows() */ * ((double) tableRoot.getRows() / tableSource.getRows());
             sumStorage += sumStorageCluster;
         }
 
