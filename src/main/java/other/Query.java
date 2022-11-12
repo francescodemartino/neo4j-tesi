@@ -31,7 +31,24 @@ public class Query {
     }
 
     public void setColumnsToMove() {
-        chooses.forEach((s, choose) -> columnsToMove.put(s, choose.getColumnsToMove()));
+        chooses.forEach((s, choose) -> {
+            columnsToMove.put(s, choose.getColumnsToMove());
+            /*if (getSql().equals("SELECT DBA . COD_PERSONA INTO : H FROM T04DBA01 DBA WHERE DBA . COD_EMPRESA = : H AND DBA . COD_FISCO = : H AND EXISTS ( SELECT 1 FROM E77DEP1R DEP WHERE DEP . CIST = : H AND DEP . NCDG = DBA . COD_PERSONA AND DEP . CSDP > 0 ) WITH UR")) {
+                System.out.println("++++++++++++++++++++++++++++++++++++++++");
+
+                getChooses().forEach((cluster, columns) -> {
+                    System.out.println("----> " + cluster);
+                    System.out.println(">>>>> " + columns.getColumns());
+                });
+
+                System.out.println("----------------------------------------");
+
+                getColumnsToMove().forEach((cluster, columns) -> {
+                    System.out.println("----> " + cluster);
+                    System.out.println(">>>>> " + columns);
+                });
+            }*/
+        });
     }
 
     public Map<String, Set<String>> getColumnsToMove() {

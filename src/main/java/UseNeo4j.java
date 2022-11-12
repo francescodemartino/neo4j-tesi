@@ -23,7 +23,7 @@ public class UseNeo4j {
         // Driver driver = GraphDatabase.driver("bolt://localhost:7687", AuthTokens.basic("neo4j", "password"));
         // Session session = driver.session();
         // Result result = session.run("MATCH (cl1:CLUSTER)-[:COMPOSES{ALGO:'" + algorithmClustering + "'}]->(t1:TABLE)-[:COMPOSE]->(c1:COLUMN)<-[:ENQUIRY{TYPE: 'SELECT'}]-(q:QUERY{TYPE:'SELECT'})-[:ENQUIRY{TYPE: 'SELECT'}]->(c2:COLUMN)<-[:COMPOSE]-(t2:TABLE)<-[:COMPOSES{ALGO:'" + algorithmClustering + "'}]-(cl2:CLUSTER) where cl1<>cl2 and NOT cl1.CODE = 'CLUSTER_No link' and NOT cl2.CODE = 'CLUSTER_No link' return q,t1,t2,cl1,cl2,c1,c2");
-        Result result = session.run("MATCH (cl1:CLUSTER)-[:COMPOSES{ALGO:'" + algorithmClustering + "'}]->(t1:TABLE)-[:COMPOSE]->(c1:COLUMN)<-[e1:ENQUIRY]-(q:QUERY{TYPE:'SELECT'})-[e2:ENQUIRY]->(c2:COLUMN)<-[:COMPOSE]-(t2:TABLE)<-[:COMPOSES{ALGO:'" + algorithmClustering + "'}]-(cl2:CLUSTER) where cl1<>cl2 and NOT cl1.CODE = 'CLUSTER_No link' and NOT cl2.CODE = 'CLUSTER_No link' and (e1.TYPE = 'SELECT' or e1.TYPE = 'WHERE') and (e2.TYPE = 'SELECT' or e2.TYPE = 'WHERE') and  (t1.OUT_OF_SCOPE is null or t1.OUT_OF_SCOPE <> '1') and (t2.OUT_OF_SCOPE is null or t2.OUT_OF_SCOPE <> '1') return q,t1,t2,cl1,cl2,c1,c2");
+        Result result = session.run("MATCH (cl1:CLUSTER)-[:COMPOSES{ALGO:'" + algorithmClustering + "'}]->(t1:TABLE)-[:COMPOSE]->(c1:COLUMN)<-[e1:ENQUIRY]-(q:QUERY{TYPE:'SELECT'})-[e2:ENQUIRY]->(c2:COLUMN)<-[:COMPOSE]-(t2:TABLE)<-[:COMPOSES{ALGO:'" + algorithmClustering + "'}]-(cl2:CLUSTER) where  cl1<>cl2 and NOT cl1.CODE = 'CLUSTER_No link' and NOT cl2.CODE = 'CLUSTER_No link' and ('SELECT' IN e1.TYPE or 'WHERE' IN e1.TYPE) and ('SELECT' IN e2.TYPE or 'WHERE' IN e2.TYPE) and  (t1.OUT_OF_SCOPE is null or t1.OUT_OF_SCOPE <> '1') and (t2.OUT_OF_SCOPE is null or t2.OUT_OF_SCOPE <> '1') return q,t1,t2,cl1,cl2,c1,c2");
         for (Record record : result.list()) {
             long idQuery = record.get("q").asNode().id();
             String sql = record.get("q").asNode().get("SQLTEXT").asString();
@@ -104,7 +104,7 @@ public class UseNeo4j {
         // successivamente bisognerà continuare a ruota.
         // Una funzione obiettivo potrebbe essere calcolata considerando il numero di campi rimossi e il numero di query coinvolte
         // oppure il numero di query coinvolte / il numero di campi coinvolti
-        groupQueriesList.sort((first, second) -> second.sizeQueries() - first.sizeQueries());
+        // groupQueriesList.sort((first, second) -> second.sizeQueries() - first.sizeQueries());
 
         List<String> listCluster = groupQueriesList.stream().map(GroupQueries::getCluster).distinct().collect(Collectors.toList());
         for (String cluster : listCluster) {
