@@ -16,12 +16,10 @@ import java.util.stream.Collectors;
 public class SaveExcel {
     private List<ResultBestGroup> toMove;
     private Session session;
-    private String algorithmClustering;
 
-    public SaveExcel(List<ResultBestGroup> toMove, Session session, String algorithmClustering) {
+    public SaveExcel(List<ResultBestGroup> toMove, Session session) {
         this.toMove = toMove;
         this.session = session;
-        this.algorithmClustering = algorithmClustering;
     }
 
     public void save() throws IOException {
@@ -69,7 +67,9 @@ public class SaveExcel {
         }
 
         Map<String, Set<String>> mapClusterRootChildren = new HashMap<>();
+        String algorithmClustering = "LDA";
         Result result = session.run("match (c:CLUSTER)-[:COMPOSES{ALGO: '" + algorithmClustering + "'}]->(t:TABLE) return c,t");
+        // Result result = session.run("match (c:CLUSTER)<-[:PROPOSED{ATTIVO:'1'}]-(t:TABLE) return c,t");
         for (Record record : result.list()) {
             String rootCluster = record.get("c").asNode().get("ROOT").asString();
             String tableName = record.get("t").asNode().get("TABLE_NAME").asString();

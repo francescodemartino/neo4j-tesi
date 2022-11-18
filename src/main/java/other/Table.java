@@ -1,5 +1,8 @@
 package other;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class Table {
     final private String name;
     final private long kb;
@@ -7,6 +10,8 @@ public class Table {
     final private int rowSize;
     final private double sizeColumn;
     final private String cluster;
+
+    public static Map<String, Integer> columns = new HashMap<>();
 
     public Table(String name, long kb, long rows, int rowSize, String cluster) {
         this.name = name;
@@ -51,6 +56,9 @@ public class Table {
     //  i tipi principali, per esempio String, Number e Date e cose così,
     //  questo perchè alla fine su mongo vengono conservati così
     public double getSizeColumn(String nameColumn) {
-        return sizeColumn;
+        if (columns.containsKey(nameColumn)) {
+            return columns.get(nameColumn);
+        }
+        return 255;
     }
 }

@@ -1,10 +1,7 @@
-import org.apache.poi.ss.usermodel.*;
-import org.apache.poi.xssf.usermodel.XSSFSheet;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.neo4j.driver.*;
 import other.Configuration;
+import other.Table;
 
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -16,14 +13,14 @@ public class UseNeo4j {
         Map<String, List<GroupQueries>> mapCluster = new HashMap<>();
         Set<String> namesCluster = new HashSet<>();
 
-        // Louvain GMM KMeans LDA Girvan-Newman
         String algorithmClustering = "LDA";
-        Driver driver = GraphDatabase.driver("bolt://localhost:11008", AuthTokens.basic("neo4j", "password"));
+        Driver driver = GraphDatabase.driver("bolt://localhost:11005", AuthTokens.basic("neo4j", "password"));
         Session session = driver.session(SessionConfig.forDatabase("tesi"));
         // Driver driver = GraphDatabase.driver("bolt://localhost:7687", AuthTokens.basic("neo4j", "password"));
         // Session session = driver.session();
         // Result result = session.run("MATCH (cl1:CLUSTER)-[:COMPOSES{ALGO:'" + algorithmClustering + "'}]->(t1:TABLE)-[:COMPOSE]->(c1:COLUMN)<-[:ENQUIRY{TYPE: 'SELECT'}]-(q:QUERY{TYPE:'SELECT'})-[:ENQUIRY{TYPE: 'SELECT'}]->(c2:COLUMN)<-[:COMPOSE]-(t2:TABLE)<-[:COMPOSES{ALGO:'" + algorithmClustering + "'}]-(cl2:CLUSTER) where cl1<>cl2 and NOT cl1.CODE = 'CLUSTER_No link' and NOT cl2.CODE = 'CLUSTER_No link' return q,t1,t2,cl1,cl2,c1,c2");
         Result result = session.run("MATCH (cl1:CLUSTER)-[:COMPOSES{ALGO:'" + algorithmClustering + "'}]->(t1:TABLE)-[:COMPOSE]->(c1:COLUMN)<-[e1:ENQUIRY]-(q:QUERY{TYPE:'SELECT'})-[e2:ENQUIRY]->(c2:COLUMN)<-[:COMPOSE]-(t2:TABLE)<-[:COMPOSES{ALGO:'" + algorithmClustering + "'}]-(cl2:CLUSTER) where  cl1<>cl2 and NOT cl1.CODE = 'CLUSTER_No link' and NOT cl2.CODE = 'CLUSTER_No link' and ('SELECT' IN e1.TYPE or 'WHERE' IN e1.TYPE) and ('SELECT' IN e2.TYPE or 'WHERE' IN e2.TYPE) and  (t1.OUT_OF_SCOPE is null or t1.OUT_OF_SCOPE <> '1') and (t2.OUT_OF_SCOPE is null or t2.OUT_OF_SCOPE <> '1') return q,t1,t2,cl1,cl2,c1,c2");
+        // Result result = session.run("MATCH (cl1:CLUSTER)<-[:PROPOSED{ATTIVO:'1'}]-(t1:TABLE)-[:COMPOSE]->(c1:COLUMN)<-[e1:ENQUIRY]-(q:QUERY{TYPE:'SELECT'})-[e2:ENQUIRY]->(c2:COLUMN)<-[:COMPOSE]-(t2:TABLE)-[:PROPOSED{ATTIVO:'1'}]->(cl2:CLUSTER) where  cl1<>cl2 and NOT cl1.CODE = 'CLUSTER_No link' and NOT cl2.CODE = 'CLUSTER_No link' and ('SELECT' IN e1.TYPE or 'WHERE' IN e1.TYPE) and ('SELECT' IN e2.TYPE or 'WHERE' IN e2.TYPE) and  (t1.OUT_OF_SCOPE is null or t1.OUT_OF_SCOPE <> '1') and (t2.OUT_OF_SCOPE is null or t2.OUT_OF_SCOPE <> '1') return q,t1,t2,cl1,cl2,c1,c2");
         for (Record record : result.list()) {
             long idQuery = record.get("q").asNode().id();
             String sql = record.get("q").asNode().get("SQLTEXT").asString();
@@ -41,6 +38,16 @@ public class UseNeo4j {
 
             namesCluster.add(clusterLeft.substring(8));
             namesCluster.add(clusterRight.substring(8));
+
+            if (record.get("c1").asNode().containsKey("LUNGHEZZA")) {
+                int lengthDataTypeLeft = record.get("c1").asNode().get("LUNGHEZZA").asInt();
+                Table.columns.put(tableLeft + ":" + columnLeft, lengthDataTypeLeft);
+            }
+            if (record.get("c2").asNode().containsKey("LUNGHEZZA")) {
+                int lengthDataTypeRight = record.get("c2").asNode().get("LUNGHEZZA").asInt();
+                Table.columns.put(tableRight + ":" + columnRight, lengthDataTypeRight);
+            }
+
         }
 
         namesCluster.removeAll(startConfiguration.getTables().keySet());
@@ -149,7 +156,15 @@ public class UseNeo4j {
 
         System.out.println("toMove size: " + toMove.size());
 
-        SaveExcel saveExcel = new SaveExcel(toMove, session, algorithmClustering);
+        CalculateOverallCost calculateOverallCost = new CalculateOverallCost(toMove, startConfiguration.getTables());
+        calculateOverallCost.exe(10);
+
+        System.out.println("---------------------------------------------------------------");
+        System.out.println("Numero query: " + calculateOverallCost.getNumQueries());
+        System.out.println("Storage in byte: " + calculateOverallCost.getSpaceStorage());
+        System.out.println("---------------------------------------------------------------");
+
+        SaveExcel saveExcel = new SaveExcel(toMove, session);
         saveExcel.save();
 
         driver.close();
