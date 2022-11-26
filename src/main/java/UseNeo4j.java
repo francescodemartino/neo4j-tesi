@@ -1,3 +1,5 @@
+import GroupQuery.GroupQueries;
+import GroupQuery.FactoryGroupQueries;
 import org.neo4j.driver.*;
 import other.Configuration;
 import other.Table;
@@ -13,6 +15,7 @@ public class UseNeo4j {
         Map<String, List<GroupQueries>> mapCluster = new HashMap<>();
         Set<String> namesCluster = new HashSet<>();
 
+        String methodGetCost = "complex";
         String algorithmClustering = "LDA";
         Driver driver = GraphDatabase.driver("bolt://localhost:11005", AuthTokens.basic("neo4j", "password"));
         Session session = driver.session(SessionConfig.forDatabase("tesi"));
@@ -70,7 +73,7 @@ public class UseNeo4j {
                         }
                     }
                     if (hasNotGroup.get()) {
-                        GroupQueries groupQueries = new GroupQueries(cluster, columns, startConfiguration.getTables());
+                        GroupQueries groupQueries = FactoryGroupQueries.getGroupQueries(methodGetCost, cluster, columns, startConfiguration.getTables());
                         groupQueries.addQuery(query);
                         groupQueriesList.add(groupQueries);
                     }
@@ -89,13 +92,13 @@ public class UseNeo4j {
             });
         });
 
-        /* Map<String, GroupQueries> groupQueriesMap = new HashMap<>();startConfiguration.getQueries().forEach((idQuery, query) -> {
+        /* Map<String, GroupQueries.GroupQueries> groupQueriesMap = new HashMap<>();startConfiguration.getQueries().forEach((idQuery, query) -> {
             query.getColumnsToMove().forEach((cluster, columns) -> {
                 String hashKey = columns.hashCode() + ":" + cluster;
                 if (groupQueriesMap.containsKey(hashKey)) {
                     groupQueriesMap.get(hashKey).addQuery(query);
                 } else {
-                    GroupQueries groupQueries = new GroupQueries(hashKey, cluster, columns);
+                    GroupQueries.GroupQueries groupQueries = new GroupQueries.GroupQueries(hashKey, cluster, columns);
                     groupQueries.addQuery(query);
                     groupQueriesMap.put(hashKey, groupQueries);
                 }
@@ -104,7 +107,7 @@ public class UseNeo4j {
             });
         });
 
-        List<GroupQueries> groupQueriesList = new ArrayList<>(groupQueriesMap.values()); */
+        List<GroupQueries.GroupQueries> groupQueriesList = new ArrayList<>(groupQueriesMap.values()); */
         // in realtà sarebbe da ordinare in base alla funzione obiettivo sul singolo gruppo e bisognerebbe dividere tutti i gruppi in sottoinsiemi in base al cluster di destinazione
         // inoltre per ogni sottoinsieme sarebbero da creare altri sottoinsiemi e verificare la loro funzione obiettivo. Una volta fatto per tutti i sottoinsiemi di ogni gruppo dei cluster di destinazione, è necessario
         // verificare quello con il punteggo più alto e quindi rimuoverlo, considerando quel gruppo eseguito. Una volta fatto bisogna togliere tutti i campi coinvolti nella operazione e tutte le query coinvolte, perchè a quel punto saranno considerate risolte
@@ -132,11 +135,14 @@ public class UseNeo4j {
             resultsCluster.sort((first, second) -> Double.compare(second.getCost(), first.getCost()));
 
             ResultBestGroup bestGroupToAdd = resultsCluster.get(0);
+            if (bestGroupToAdd.getQueries().size() == 0) {
+                break;
+            }
             toMove.add(bestGroupToAdd);
             bestCost = bestGroupToAdd.getCost();
             mapCluster.get(bestGroupToAdd.getCluster()).removeAll(bestGroupToAdd.getGroupQueries());
             /*for (String cluster : listCluster) {
-                for (GroupQueries groupQueries : mapCluster.get(cluster)) {
+                for (GroupQueries.GroupQueries groupQueries : mapCluster.get(cluster)) {
                     groupQueries.removeColumns(bestGroupToAdd.getColumns());
                     groupQueries.removeQueries(bestGroupToAdd.getQueries());
                 }
@@ -152,7 +158,8 @@ public class UseNeo4j {
                 }
             }
             System.out.println("bestCost: " + bestCost);
-        } while (bestCost >= Math.pow(10, -11));
+        //} while (bestCost >= Math.pow(10, -11));
+        } while (true);
 
         System.out.println("toMove size: " + toMove.size());
 

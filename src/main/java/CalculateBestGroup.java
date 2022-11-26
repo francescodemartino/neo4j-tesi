@@ -1,3 +1,6 @@
+import GroupQuery.GroupQueries;
+import GroupQuery.GroupQueriesComplex;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -6,6 +9,18 @@ public class CalculateBestGroup {
         List<GroupQueries> listToReturn = new ArrayList<>();
 
         listGroupQueries.sort((first, second) -> Double.compare(second.getCost(null, null), first.getCost(null, null)));
+
+        /*if (listGroupQueries.size() == 35) {
+            System.out.println("+++++++++++++++++++++++++++++");
+            for (GroupQueries listGroupQuery : listGroupQueries) {
+                listGroupQuery.getCost(null, null);
+                System.out.println("numerator: " + GroupQueriesComplex.numerator);
+                System.out.println("denominator: " + GroupQueriesComplex.denominator);
+                System.out.println("-------------------------------------");
+            }
+            System.exit(0);
+        }*/
+
         if (listGroupQueries.size() > 0) {
             listToReturn.add(listGroupQueries.get(0));
             double lastCost = 0;

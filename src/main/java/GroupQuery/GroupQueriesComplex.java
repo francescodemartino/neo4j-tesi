@@ -1,3 +1,5 @@
+package GroupQuery;
+
 import other.Query;
 import other.Table;
 
@@ -7,65 +9,16 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class GroupQueries {
-    private String cluster;
-    private Set<String> columns;
-    private Set<Query> queries = new HashSet<>();
-    private Map<String, Table> tables;
+public class GroupQueriesComplex extends GroupQueries {
+    public static double numerator;
+    public static double denominator;
 
-    public GroupQueries(String cluster, Set<String> columns, Map<String, Table> tables) {
-        this.cluster = cluster;
-        this.columns = columns;
-        this.tables = tables;
+    public GroupQueriesComplex(String cluster, Set<String> columns, Map<String, Table> tables) {
+        super(cluster, columns, tables);
     }
 
-    public void addQuery(Query query) {
-        queries.add(query);
-    }
-
-    public int sizeQueries() {
-        return queries.size();
-    }
-
-    public String getCluster() {
-        return cluster;
-    }
-
-    public Set<String> getColumns() {
-        return columns;
-    }
-
-    public void removeColumns(Set<String> columns) {
-        this.columns.removeAll(columns);
-    }
-
-    public void removeQueries(Set<Query> queries) {
-        this.queries.removeAll(queries);
-    }
-
-    public Set<Query> getQueries() {
-        return queries;
-    }
-
-    boolean isOnTop(List<GroupQueries> groupsToRemove, List<GroupQueries> groups) {
-        Set<String> columnsCopy = new HashSet<>(columns);
-        Set<Query> queriesCopy = new HashSet<>(queries);
-        if (groups != null) {
-            groups.forEach(groupQueries -> {
-                columnsCopy.addAll(groupQueries.getColumns());
-                queriesCopy.addAll(groupQueries.getQueries());
-            });
-        }
-        if (groupsToRemove != null) {
-            groupsToRemove.forEach(groupQueries -> {
-                columnsCopy.removeAll(groupQueries.getColumns());
-                queriesCopy.removeAll(groupQueries.getQueries());
-            });
-        }
-        return columnsCopy.size() == 0 && queriesCopy.size() != 0;
-    }
-
-    double getCost(List<GroupQueries> groupsToRemove, List<GroupQueries> groups) {
+    @Override
+    public double getCost(List<GroupQueries> groupsToRemove, List<GroupQueries> groups) {
         Set<String> columnsCopy = new HashSet<>(columns);
         Set<Query> queriesCopy = new HashSet<>(queries);
         if (groups != null) {
@@ -108,6 +61,8 @@ public class GroupQueries {
 
         double indexCost = 1 + (Math.log(tableRoot.getRows()) / Math.log(2));
 
+        numerator = numQueries;
+        denominator = (sumStorage + indexCost);
         return numQueries / (sumStorage + indexCost);
         /*double queriesCost = (double) queriesCopy.size();
         double columnsCost = (double) columnsCopy.size();
