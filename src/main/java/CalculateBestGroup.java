@@ -2,24 +2,32 @@ import GroupQuery.GroupQueries;
 import GroupQuery.GroupQueriesComplex;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class CalculateBestGroup {
+    public static double calculateSD(double numArray[])
+    {
+        double sum = 0.0, standardDeviation = 0.0;
+        int length = numArray.length;
+
+        for(double num : numArray) {
+            sum += num;
+        }
+
+        double mean = sum/length;
+
+        for(double num: numArray) {
+            standardDeviation += Math.pow(num - mean, 2);
+        }
+
+        return Math.sqrt(standardDeviation/length);
+    }
+
     public static ResultBestGroup getBestGroup(String cluster, List<GroupQueries> listGroupQueries) {
         List<GroupQueries> listToReturn = new ArrayList<>();
 
         listGroupQueries.sort((first, second) -> Double.compare(second.getCost(null, null), first.getCost(null, null)));
-
-        /*if (listGroupQueries.size() == 35) {
-            System.out.println("+++++++++++++++++++++++++++++");
-            for (GroupQueries listGroupQuery : listGroupQueries) {
-                listGroupQuery.getCost(null, null);
-                System.out.println("numerator: " + GroupQueriesComplex.numerator);
-                System.out.println("denominator: " + GroupQueriesComplex.denominator);
-                System.out.println("-------------------------------------");
-            }
-            System.exit(0);
-        }*/
 
         if (listGroupQueries.size() > 0) {
             listToReturn.add(listGroupQueries.get(0));
