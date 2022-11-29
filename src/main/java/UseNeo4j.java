@@ -1,8 +1,11 @@
 import GroupQuery.GroupQueries;
 import GroupQuery.FactoryGroupQueries;
+import GroupQuery.ResponseCost;
 import org.neo4j.driver.*;
 import other.Configuration;
 import other.Table;
+import scale.Scaling;
+import scale.ScalingFactory;
 
 import java.io.IOException;
 import java.util.*;
@@ -15,6 +18,7 @@ public class UseNeo4j {
         Map<String, List<GroupQueries>> mapCluster = new HashMap<>();
         Set<String> namesCluster = new HashSet<>();
 
+        ScalingFactory.typeScaling = "square";
         String methodGetCost = "complex";
         String algorithmClustering = "LDA";
         Driver driver = GraphDatabase.driver("bolt://localhost:11005", AuthTokens.basic("neo4j", "password"));
@@ -129,24 +133,49 @@ public class UseNeo4j {
             resultsCluster.clear();
 
             for (String cluster : listCluster) {
-                resultsCluster.add(CalculateBestGroup.getBestGroup(cluster, mapCluster.get(cluster)));
+                ResultBestGroup resultBestGroup = CalculateBestGroup.getBestGroup(cluster, mapCluster.get(cluster));
+                if (resultBestGroup.getQueries().size() != 0) {
+                    resultsCluster.add(resultBestGroup);
+                }
             }
-            System.out.println("---> " + resultsCluster.size());
-            resultsCluster.sort((first, second) -> Double.compare(second.getCost(), first.getCost()));
 
-            ResultBestGroup bestGroupToAdd = resultsCluster.get(0);
-            if (bestGroupToAdd.getQueries().size() == 0) {
+            if (resultsCluster.size() == 0) {
                 break;
             }
-            toMove.add(bestGroupToAdd);
-            bestCost = bestGroupToAdd.getCost();
-            mapCluster.get(bestGroupToAdd.getCluster()).removeAll(bestGroupToAdd.getGroupQueries());
-            /*for (String cluster : listCluster) {
-                for (GroupQueries.GroupQueries groupQueries : mapCluster.get(cluster)) {
-                    groupQueries.removeColumns(bestGroupToAdd.getColumns());
-                    groupQueries.removeQueries(bestGroupToAdd.getQueries());
+
+            double[] listNumerator = new double[resultsCluster.size()];
+            double[] listDenominator = new double[resultsCluster.size()];
+            for (int i = 0; i < resultsCluster.size(); i++) {
+                ResponseCost responseCost = resultsCluster.get(i).getCost(null);
+                listNumerator[i] = responseCost.getNumerator();
+                listDenominator[i] = responseCost.getDenominator();
+            }
+            Scaling scaling = ScalingFactory.getScaling(ScalingFactory.typeScaling);
+            scaling.calculateCost(listNumerator, listDenominator);
+
+            System.out.println("---> " + resultsCluster.size());
+            resultsCluster.sort((first, second) -> {
+                if (first == null) {
+                    return -1;
                 }
-            }*/
+                if (second == null) {
+                    return 1;
+                }
+                return Double.compare(second.getCost(scaling).getCost(), first.getCost(scaling).getCost());
+            });
+
+            for (ResultBestGroup resultBestGroup : resultsCluster) {
+                System.out.println("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+                System.out.println(resultBestGroup.getQueries().size());
+                System.out.println(resultBestGroup.getColumns().size());
+                System.out.println(resultBestGroup.getCost(scaling).getCost());
+            }
+            System.out.println("ccccccccccccccccccccccccccccccccccccccc\n\n");
+
+            ResultBestGroup bestGroupToAdd = resultsCluster.get(0);
+            toMove.add(bestGroupToAdd);
+            bestCost = bestGroupToAdd.getCost(scaling).getCost();
+            mapCluster.get(bestGroupToAdd.getCluster()).removeAll(bestGroupToAdd.getGroupQueries());
 
             for (GroupQueries groupQueries : mapCluster.get(bestGroupToAdd.getCluster())) {
                 groupQueries.removeColumns(bestGroupToAdd.getColumns());
@@ -164,7 +193,7 @@ public class UseNeo4j {
         System.out.println("toMove size: " + toMove.size());
 
         CalculateOverallCost calculateOverallCost = new CalculateOverallCost(toMove, startConfiguration.getTables());
-        calculateOverallCost.exe(10);
+        calculateOverallCost.exe(1000);
 
         System.out.println("---------------------------------------------------------------");
         System.out.println("Numero query: " + calculateOverallCost.getNumQueries());

@@ -1,65 +1,52 @@
 import GroupQuery.GroupQueries;
-import GroupQuery.GroupQueriesComplex;
+import scale.Scaling;
+import scale.ScalingFactory;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class CalculateBestGroup {
-    public static double calculateSD(double numArray[])
-    {
-        double sum = 0.0, standardDeviation = 0.0;
-        int length = numArray.length;
-
-        for(double num : numArray) {
-            sum += num;
-        }
-
-        double mean = sum/length;
-
-        for(double num: numArray) {
-            standardDeviation += Math.pow(num - mean, 2);
-        }
-
-        return Math.sqrt(standardDeviation/length);
-    }
-
     public static ResultBestGroup getBestGroup(String cluster, List<GroupQueries> listGroupQueries) {
         List<GroupQueries> listToReturn = new ArrayList<>();
 
-        listGroupQueries.sort((first, second) -> Double.compare(second.getCost(null, null), first.getCost(null, null)));
+        if (listGroupQueries.size() == 0) {
+            return new ResultBestGroup(cluster, listToReturn);
+        }
+
+        Scaling scaling = ScalingFactory.getScaling(ScalingFactory.typeScaling);
+        scaling.calculateCost(listGroupQueries, null, null);
+
+        listGroupQueries = listGroupQueries.stream().filter(groupQueries -> groupQueries.getQueries().size() != 0).collect(Collectors.toList());
+
+        listGroupQueries.sort((first, second) -> Double.compare(second.getCost(null, null, scaling).getCost(), first.getCost(null, null, scaling).getCost()));
 
         if (listGroupQueries.size() > 0) {
             listToReturn.add(listGroupQueries.get(0));
-            double lastCost = 0;
-            double currentCost = listGroupQueries.get(0).getCost(null, null);
+            /*System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> " + listGroupQueries.get(0).getQueries().size());
+            System.out.print("----> ");
+            for (GroupQueries listGroupQuery : listGroupQueries) {
+                System.out.print(listGroupQuery.getQueries().size() + " ");
+            }
+            System.out.println("");*/
+
+            listGroupQueries.get(0).setAdded(true);
+            Scaling scalingCopy = ScalingFactory.getScaling(ScalingFactory.typeScaling);
+            scalingCopy.calculateCost(listGroupQueries, null, listToReturn);
 
             while (listToReturn.size() < listGroupQueries.size()) {
-                lastCost = currentCost;
-                listGroupQueries.sort((first, second) -> {
-                    if (first.isOnTop(listToReturn, null)) {
-                        return -1;
-                    } else if (second.isOnTop(listToReturn, null)) {
-                        return 1;
-                    } else {
-                        return Double.compare(second.getCost(listToReturn, null), first.getCost(listToReturn, null));
-                    }
-                });
-                // listGroupQueries.forEach(groupQueries -> System.out.println(groupQueries.getCost(listToReturn, null)));
-                // System.out.println("-----------------");
-                // System.out.println("listToReturn.size(): " + listToReturn.size());
-                // System.out.println("listGroupQueries.size(): " + listGroupQueries.size());
-                currentCost = listGroupQueries.get(0).getCost(null, listToReturn);
-                // System.out.println("lastCost: " + lastCost);
-                // System.out.println("currentCost: " + currentCost);
-                if (lastCost <= currentCost) {
-                    listToReturn.add(listGroupQueries.get(0));
-                } else {
+                listGroupQueries.sort((first, second) -> Double.compare(second.getCost(null, listToReturn, scalingCopy).getCost(), first.getCost(null, listToReturn, scalingCopy).getCost()));
+                GroupQueries groupQueries = listGroupQueries.get(0);
+                if (groupQueries.isAdded()) {
                     break;
+                } else {
+                    listToReturn.add(groupQueries);
+                    groupQueries.setAdded(true);
                 }
             }
-            // System.out.println("listToReturn size: " + listToReturn.size());
-            // System.out.println("++++++++++++++++++++");
+            for (GroupQueries groupQuery : listGroupQueries) {
+                groupQuery.setAdded(false);
+            }
         }
         return new ResultBestGroup(cluster, listToReturn);
     }

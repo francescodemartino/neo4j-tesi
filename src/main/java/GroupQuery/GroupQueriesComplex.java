@@ -2,7 +2,7 @@ package GroupQuery;
 
 import other.Query;
 import other.Table;
-
+import scale.Scaling;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -10,15 +10,12 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 public class GroupQueriesComplex extends GroupQueries {
-    public static double numerator;
-    public static double denominator;
-
     public GroupQueriesComplex(String cluster, Set<String> columns, Map<String, Table> tables) {
         super(cluster, columns, tables);
     }
 
     @Override
-    public double getCost(List<GroupQueries> groupsToRemove, List<GroupQueries> groups) {
+    public ResponseCost getCost(List<GroupQueries> groupsToRemove, List<GroupQueries> groups, Scaling scaling) {
         Set<String> columnsCopy = new HashSet<>(columns);
         Set<Query> queriesCopy = new HashSet<>(queries);
         if (groups != null) {
@@ -61,9 +58,15 @@ public class GroupQueriesComplex extends GroupQueries {
 
         double indexCost = 1 + (Math.log(tableRoot.getRows()) / Math.log(2));
 
-        numerator = numQueries;
-        denominator = (sumStorage + indexCost);
-        return numQueries / (sumStorage + indexCost);
+        double numerator = numQueries;
+        double denominator = (sumStorage + indexCost);
+
+        if (scaling != null) {
+            numerator = scaling.getCostNumerator(numerator);
+            denominator = scaling.getCostDenominator(denominator);
+        }
+
+        return new ResponseCost(numerator, denominator, numerator / denominator);
         /*double queriesCost = (double) queriesCopy.size();
         double columnsCost = (double) columnsCopy.size();
         if (queriesCost == 0) {

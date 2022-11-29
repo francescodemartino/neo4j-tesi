@@ -1,7 +1,7 @@
 package GroupQuery;
-
 import other.Query;
 import other.Table;
+import scale.Scaling;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -12,7 +12,7 @@ public class GroupQueriesSimpler extends GroupQueries {
     }
 
     @Override
-    public double getCost(List<GroupQueries> groupsToRemove, List<GroupQueries> groups) {
+    public ResponseCost getCost(List<GroupQueries> groupsToRemove, List<GroupQueries> groups, Scaling scaling) {
         Set<String> columnsCopy = new HashSet<>(columns);
         Set<Query> queriesCopy = new HashSet<>(queries);
         if (groups != null) {
@@ -45,11 +45,20 @@ public class GroupQueriesSimpler extends GroupQueries {
 
         double queriesCost = queriesCopy.size();
         if (queriesCost == 0) {
-            return 0;
+            return new ResponseCost(0, columnsCost, 0);
         }
         if (columnsCost == 0) {
-            return queriesCost + 1;
+            return new ResponseCost(queriesCost, 0, queriesCost + 1);
         }
-        return queriesCost / columnsCost;
+        double numerator;
+        double denominator;
+        if (scaling == null) {
+            numerator = queriesCost;
+            denominator = columnsCost;
+        } else {
+            numerator = scaling.getCostNumerator(queriesCost);
+            denominator = scaling.getCostDenominator(columnsCost);
+        }
+        return new ResponseCost(numerator, denominator, numerator / denominator);
     }
 }

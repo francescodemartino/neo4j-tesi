@@ -2,6 +2,7 @@ package GroupQuery;
 
 import other.Query;
 import other.Table;
+import scale.Scaling;
 
 import java.util.*;
 
@@ -10,11 +11,20 @@ public abstract class GroupQueries {
     protected Set<String> columns;
     protected Set<Query> queries = new HashSet<>();
     protected Map<String, Table> tables;
+    private boolean isAdded = false;
 
     public GroupQueries(String cluster, Set<String> columns, Map<String, Table> tables) {
         this.cluster = cluster;
         this.columns = columns;
         this.tables = tables;
+    }
+
+    public boolean isAdded() {
+        return isAdded;
+    }
+
+    public void setAdded(boolean added) {
+        isAdded = added;
     }
 
     public void addQuery(Query query) {
@@ -63,5 +73,5 @@ public abstract class GroupQueries {
         return columnsCopy.size() == 0 && queriesCopy.size() != 0;
     }
 
-    public abstract double getCost(List<GroupQueries> groupsToRemove, List<GroupQueries> groups);
+    public abstract ResponseCost getCost(List<GroupQueries> groupsToRemove, List<GroupQueries> groups, Scaling scaling);
 }

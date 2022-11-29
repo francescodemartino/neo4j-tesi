@@ -1,5 +1,7 @@
 import GroupQuery.GroupQueries;
+import GroupQuery.ResponseCost;
 import other.Query;
+import scale.Scaling;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -37,13 +39,13 @@ class ResultBestGroup {
         return queries;
     }
 
-    public double getCost() {
+    public ResponseCost getCost(Scaling scaling) {
         List<GroupQueries> groupQueriesCopy = new ArrayList<>(groupQueries);
         if (groupQueriesCopy.size() == 0) {
-            return 0;
+            return null;
         }
         GroupQueries firstGroup = groupQueriesCopy.get(0);
         groupQueriesCopy.remove(0);
-        return firstGroup.getCost(null, groupQueriesCopy);
+        return firstGroup.getCost(null, groupQueriesCopy, scaling);
     }
 }
