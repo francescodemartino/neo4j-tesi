@@ -41,18 +41,23 @@ public class GroupQueriesComplex extends GroupQueries {
             double sumStorageCluster = 0;
             Map<String, List<String>> groupTableColumn = entryGroupClusterColumn.getValue().stream().collect(Collectors.groupingBy(column -> column.split(":")[0]));
             for (Map.Entry<String, List<String>> entryTableColumn : groupTableColumn.entrySet()) {
-                double sizeColumns = 0;
+                // double sizeColumns = 0;
                 Table table = tables.get(entryTableColumn.getKey());
                 for (String column : entryTableColumn.getValue()) {
-                    sizeColumns += table.getSizeColumn(column);
+                    // sizeColumns += table.getSizeColumn(column);
+                    sumStorageCluster += table.getSizeColumn(column);
                 }
-                sumStorageCluster += sizeColumns * table.getRows();
+                // sumStorageCluster += sizeColumns * table.getRows();
             }
             tableSource = tables.get(entryGroupClusterColumn.getKey());
             /*System.out.println(entryGroupClusterColumn.getKey());
             System.out.println(tableSource.getName());
             System.out.println(tableSource.getRows());*/
-            sumStorageCluster = sumStorageCluster /* * tableSource.getRows() */ * ((double) tableRoot.getRows() / tableSource.getRows());
+            // sumStorageCluster = sumStorageCluster * tableSource.getRows() * ((double) tableRoot.getRows() / tableSource.getRows());
+            // sumStorageCluster = sumStorageCluster * ((double) tableSource.getRows() / tableRoot.getRows());
+            sumStorageCluster = sumStorageCluster * tableSource.getRows() * ((double) tableSource.getRows() / tableRoot.getRows());
+            // sumStorageCluster = sumStorageCluster * Math.max(tableSource.getRows(), tableRoot.getRows()) * ((double) tableRoot.getRows() / tableSource.getRows());
+
             sumStorage += sumStorageCluster;
         }
 

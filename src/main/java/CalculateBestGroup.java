@@ -2,7 +2,9 @@ import GroupQuery.GroupQueries;
 import scale.Scaling;
 import scale.ScalingFactory;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -12,6 +14,9 @@ public class CalculateBestGroup {
 
         if (listGroupQueries.size() == 0) {
             return new ResultBestGroup(cluster, listToReturn);
+        } else if (listGroupQueries.size() == 1) {
+            listToReturn.add(listGroupQueries.get(0));
+            return new ResultBestGroup(cluster, listToReturn);
         }
 
         Scaling scaling = ScalingFactory.getScaling(ScalingFactory.typeScaling);
@@ -20,6 +25,26 @@ public class CalculateBestGroup {
         listGroupQueries = listGroupQueries.stream().filter(groupQueries -> groupQueries.getQueries().size() != 0).collect(Collectors.toList());
 
         listGroupQueries.sort((first, second) -> Double.compare(second.getCost(null, null, scaling).getCost(), first.getCost(null, null, scaling).getCost()));
+
+
+        List<Double> numerator = new ArrayList<>();
+        List<Double> denominator = new ArrayList<>();
+        System.out.println("-------------------------------------------");
+        for (GroupQueries listGroupQuery : listGroupQueries) {
+            numerator.add(listGroupQuery.getCost(null, null, scaling).getNumerator());
+            denominator.add(listGroupQuery.getCost(null, null, scaling).getDenominator());
+        }
+        Collections.sort(numerator);
+        Collections.sort(denominator);
+        for (int i = 0; i < numerator.size(); i++) {
+            System.out.println("(" + i + "," + new BigDecimal(numerator.get(i)) + ")");
+        }
+        System.out.println("++++++++++++++++++++++++++++++++++");
+        for (int i = 0; i < denominator.size(); i++) {
+            System.out.println("(" + i + "," + new BigDecimal(denominator.get(i)) + ")");
+        }
+        System.out.println("-------------------------------------------");
+
 
         if (listGroupQueries.size() > 0) {
             listToReturn.add(listGroupQueries.get(0));

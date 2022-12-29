@@ -2,12 +2,12 @@ package scale;
 
 import GroupQuery.GroupQueries;
 import GroupQuery.ResponseCost;
-import utilis.Utility;
 
 import java.util.Arrays;
 import java.util.List;
 
-public class Square extends Scaling {
+// https://scicomp.stackexchange.com/questions/22094/normalize-data-so-that-the-sum-of-squares-1
+public class L1 extends Scaling {
     protected double squareNumerator;
     protected double squareDenominator;
 
@@ -25,8 +25,8 @@ public class Square extends Scaling {
 
     @Override
     public void calculateCost(double[] listNumerator, double[] listDenominator) {
-        squareNumerator = Math.sqrt(Arrays.stream(listNumerator).map(operand -> operand * operand).sum());
-        squareDenominator = Math.sqrt(Arrays.stream(listDenominator).map(operand -> operand * operand).sum());
+        squareNumerator = Arrays.stream(listNumerator).map(Math::abs).sum();
+        squareDenominator = Arrays.stream(listDenominator).map(Math::abs).sum();
     }
 
     @Override

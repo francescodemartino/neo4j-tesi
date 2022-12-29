@@ -1,11 +1,14 @@
 import other.Table;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 public class CalculateOverallCost {
     private List<ResultBestGroup> toMove;
+    private List<Integer> numQueriesList;
+    private List<Long> spaceStorageList;
     private Map<String, Table> tables;
     private int numQueries = 0;
     private long spaceStorage = 0;
@@ -13,9 +16,12 @@ public class CalculateOverallCost {
     public CalculateOverallCost(List<ResultBestGroup> toMove, Map<String, Table> tables) {
         this.toMove = toMove;
         this.tables = tables;
+        numQueriesList = new ArrayList<>(toMove.size());
+        spaceStorageList = new ArrayList<>(toMove.size());
     }
 
-    public void exe(int limitMoves) {
+    public void exe() {
+        int limitMoves = 100000;
         numQueries = 0;
         spaceStorage = 0;
         for (int i=0; i<limitMoves; i++) {
@@ -34,6 +40,8 @@ public class CalculateOverallCost {
                 spaceStorage = spaceStorage + (sizeColumns * Math.max(rowsCluster, rowsTable));
             }
             numQueries = numQueries + resultBestGroup.getQueries().size();
+            numQueriesList.add(numQueries);
+            spaceStorageList.add(spaceStorage);
         }
     }
 
@@ -43,5 +51,13 @@ public class CalculateOverallCost {
 
     public long getSpaceStorage() {
         return spaceStorage;
+    }
+
+    public List<Integer> getNumQueriesList() {
+        return numQueriesList;
+    }
+
+    public List<Long> getSpaceStorageList() {
+        return spaceStorageList;
     }
 }

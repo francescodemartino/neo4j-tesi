@@ -3,14 +3,16 @@ package scale;
 import GroupQuery.GroupQueries;
 import GroupQuery.ResponseCost;
 
+import java.math.BigDecimal;
+import java.math.MathContext;
 import java.util.Arrays;
 import java.util.List;
 
-public class MinMax extends Scaling {
-    double minNumerator;
-    double maxNumerator;
-    double minDenominator;
-    double maxDenominator;
+// https://scicomp.stackexchange.com/questions/22094/normalize-data-so-that-the-sum-of-squares-1
+public class L2 extends Scaling {
+    protected BigDecimal squareNumerator;
+    protected BigDecimal squareDenominator;
+    protected MathContext mc = new MathContext(10);
 
     @Override
     public void calculateCost(List<GroupQueries> listGroupQueries, List<GroupQueries> groupsToRemove, List<GroupQueries> groups) {
@@ -26,19 +28,17 @@ public class MinMax extends Scaling {
 
     @Override
     public void calculateCost(double[] listNumerator, double[] listDenominator) {
-        minNumerator = Arrays.stream(listNumerator).min().getAsDouble();
-        maxNumerator = Arrays.stream(listNumerator).max().getAsDouble();
-        minDenominator = Arrays.stream(listDenominator).min().getAsDouble();
-        maxDenominator = Arrays.stream(listDenominator).max().getAsDouble();
+        squareNumerator = Arrays.stream(listNumerator).mapToObj(operand -> new BigDecimal(operand).multiply(new BigDecimal(operand))).reduce(BigDecimal.ZERO, BigDecimal::add).sqrt(mc);
+        squareDenominator = Arrays.stream(listDenominator).mapToObj(operand -> new BigDecimal(operand).multiply(new BigDecimal(operand))).reduce(BigDecimal.ZERO, BigDecimal::add).sqrt(mc);
     }
 
     @Override
     public double getCostNumerator(double value) {
-        return 1 + ((value - minNumerator) / (maxNumerator - minNumerator));
+        return (new BigDecimal(value).divide(squareNumerator, mc)).doubleValue();
     }
 
     @Override
     public double getCostDenominator(double value) {
-        return 1 + ((value - minDenominator) / (maxDenominator - minDenominator));
+        return (new BigDecimal(value).divide(squareDenominator, mc)).doubleValue();
     }
 }

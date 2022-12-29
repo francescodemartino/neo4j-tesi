@@ -16,17 +16,19 @@ import java.util.stream.Collectors;
 public class SaveExcel {
     private List<ResultBestGroup> toMove;
     private Session session;
+    private CalculateOverallCost calculateOverallCost;
 
-    public SaveExcel(List<ResultBestGroup> toMove, Session session) {
+    public SaveExcel(List<ResultBestGroup> toMove, Session session, CalculateOverallCost calculateOverallCost) {
         this.toMove = toMove;
         this.session = session;
+        this.calculateOverallCost = calculateOverallCost;
     }
 
     public void save() throws IOException {
         XSSFWorkbook workbook = new XSSFWorkbook();
         XSSFSheet sheet = workbook.createSheet("Risultati");
 
-        String[] header = {"ID", "Numero query", "Tabelle e colonne da spostare", "Cluster target"};
+        String[] header = {"ID", "Numero query", "Tabelle e colonne da spostare", "Cluster target", "Storage", "Query complessive"};
         Row rowHeader = sheet.createRow(0);
         for (int i = 0; i < header.length; i++) {
             Cell cellHeader = rowHeader.createCell(i);
@@ -36,7 +38,7 @@ public class SaveExcel {
 
         int rowCount = 1;
         for (ResultBestGroup bestGroup : toMove) {
-            Object[] rowData = {rowCount, bestGroup.getQueries().size(), bestGroup.getColumns().toString().substring(1, bestGroup.getColumns().toString().length() - 1), bestGroup.getCluster()};
+            Object[] rowData = {rowCount, bestGroup.getQueries().size(), bestGroup.getColumns().toString().substring(1, bestGroup.getColumns().toString().length() - 1), bestGroup.getCluster(), calculateOverallCost.getSpaceStorageList().get(rowCount - 1), calculateOverallCost.getNumQueriesList().get(rowCount - 1)};
             Row row = sheet.createRow(rowCount);
             int columnCount = 0;
             for (Object field : rowData) {
@@ -45,6 +47,8 @@ public class SaveExcel {
                     cell.setCellValue((String) field);
                 } else if (field instanceof Integer) {
                     cell.setCellValue((Integer) field);
+                } else if (field instanceof Long) {
+                    cell.setCellValue((Long) field);
                 }
                 columnCount++;
             }

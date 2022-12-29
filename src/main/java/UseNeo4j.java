@@ -18,10 +18,10 @@ public class UseNeo4j {
         Map<String, List<GroupQueries>> mapCluster = new HashMap<>();
         Set<String> namesCluster = new HashSet<>();
 
-        ScalingFactory.typeScaling = "square";
+        ScalingFactory.typeScaling = "min-max";
         String methodGetCost = "complex";
         String algorithmClustering = "LDA";
-        Driver driver = GraphDatabase.driver("bolt://localhost:11005", AuthTokens.basic("neo4j", "password"));
+        Driver driver = GraphDatabase.driver("bolt://localhost:11008", AuthTokens.basic("neo4j", "password"));
         Session session = driver.session(SessionConfig.forDatabase("tesi"));
         // Driver driver = GraphDatabase.driver("bolt://localhost:7687", AuthTokens.basic("neo4j", "password"));
         // Session session = driver.session();
@@ -193,14 +193,27 @@ public class UseNeo4j {
         System.out.println("toMove size: " + toMove.size());
 
         CalculateOverallCost calculateOverallCost = new CalculateOverallCost(toMove, startConfiguration.getTables());
-        calculateOverallCost.exe(1000);
+        calculateOverallCost.exe();
 
         System.out.println("---------------------------------------------------------------");
         System.out.println("Numero query: " + calculateOverallCost.getNumQueries());
         System.out.println("Storage in byte: " + calculateOverallCost.getSpaceStorage());
         System.out.println("---------------------------------------------------------------");
 
-        SaveExcel saveExcel = new SaveExcel(toMove, session);
+        System.out.println("cccccccccccccccccccccccccccccccccc");
+        // System.out.println("(0,0)");
+        System.out.println("1\t0\t0.00 GB");
+        for (int i = 0; i < calculateOverallCost.getSpaceStorageList().size(); i++) {
+            int numQuery = calculateOverallCost.getNumQueriesList().get(i);
+            int storage = (int)((calculateOverallCost.getSpaceStorageList().get(i)/Math.pow(10, 9))*1000);
+            double storageDouble = ((double)storage)/1000;
+            // System.out.println("(" + numQuery + "," + storageDouble + ")");
+            // System.out.println((i + 2) + "\t" + numQuery + "\t" + storageDouble + " GB");
+            System.out.println("(" + numQuery + "," + (numQuery/storageDouble) + ")");
+        }
+        System.out.println("cccccccccccccccccccccccccccccccccc");
+
+        SaveExcel saveExcel = new SaveExcel(toMove, session, calculateOverallCost);
         saveExcel.save();
 
         driver.close();

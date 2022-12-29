@@ -9,8 +9,10 @@ public class ScalingFactory {
                 return new SdAvg();
             case "min-max":
                 return new MinMax();
-            case "square":
-                return new Square();
+            case "l1":
+                return new L1();
+            case "l2":
+                return new L2();
             case "none":
                 return new None();
         }
