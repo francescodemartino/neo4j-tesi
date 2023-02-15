@@ -208,8 +208,8 @@ public class UseNeo4j {
             int storage = (int)((calculateOverallCost.getSpaceStorageList().get(i)/Math.pow(10, 9))*1000);
             double storageDouble = ((double)storage)/1000;
             // System.out.println("(" + numQuery + "," + storageDouble + ")");
-            // System.out.println((i + 2) + "\t" + numQuery + "\t" + storageDouble + " GB");
-            System.out.println("(" + numQuery + "," + (numQuery/storageDouble) + ")");
+            System.out.println((i + 2) + "\t" + numQuery + "\t" + storageDouble + " GB");
+            // System.out.println("(" + numQuery + "," + (numQuery/storageDouble) + ")");
         }
         System.out.println("cccccccccccccccccccccccccccccccccc");
 
